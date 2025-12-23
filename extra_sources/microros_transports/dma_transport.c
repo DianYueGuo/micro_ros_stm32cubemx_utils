@@ -17,16 +17,22 @@
 
 static uint8_t dma_buffer[UART_DMA_BUFFER_SIZE];
 static size_t dma_head = 0, dma_tail = 0;
+static bool dma_running = false;
 
 bool cubemx_transport_open(struct uxrCustomTransport * transport){
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
-    HAL_UART_Receive_DMA(uart, dma_buffer, UART_DMA_BUFFER_SIZE);
-    return true;
+    HAL_StatusTypeDef ret = HAL_UART_Receive_DMA(uart, dma_buffer, UART_DMA_BUFFER_SIZE);
+    dma_running = (ret == HAL_OK);
+    if (!dma_running) {
+        printf("cubemx_transport_open: RX DMA start failed (ret=%d)\n", (int)ret);
+    }
+    return dma_running;
 }
 
 bool cubemx_transport_close(struct uxrCustomTransport * transport){
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
     HAL_UART_DMAStop(uart);
+    dma_running = false;
     return true;
 }
 
@@ -48,6 +54,10 @@ size_t cubemx_transport_write(struct uxrCustomTransport* transport, uint8_t * bu
 
 size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err){
     UART_HandleTypeDef * uart = (UART_HandleTypeDef*) transport->args;
+
+    if (!dma_running || uart->hdmarx == NULL) {
+        return 0;
+    }
 
     int ms_used = 0;
     do
