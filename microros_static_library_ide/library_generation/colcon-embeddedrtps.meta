@@ -29,7 +29,7 @@
         },
         "embeddedrtps": {
             "cmake-args": [
-                "-DERTPS_MAX_PUBLISHERS=2",
+                "-DERTPS_MAX_PUBLISHERS=4",
                 "-DERTPS_MAX_SUBSCRIPTIONS=2",
                 "-DERTPS_MAX_SERVICES=0",
                 "-DERTPS_MAX_CLIENTS=0",
